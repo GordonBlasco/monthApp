@@ -22,3 +22,7 @@ BugReports: https://github.com/hadley/monthApp/issues
 Imports: 
     tibble,
     shiny
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr

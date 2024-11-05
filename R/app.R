@@ -12,6 +12,7 @@ monthApp <- function(...) {
 
   ui <- navbarPage(
     "Sample app",
+    id = 'homepage',
     tabPanel("Pick a month",
       selectInput("month", "What's your favourite month?", choices = months)
     ),
@@ -20,6 +21,7 @@ monthApp <- function(...) {
     tabPanel("Weather", weatherUI("tab3"))
   )
   server <- function(input, output, session) {
+    shinylogs::track_usage(storage_mode = shinylogs::store_rds(path = "logs/"))
     monthFeedbackServer("tab1", reactive(input$month))
     birthstoneServer("tab2", reactive(input$month))
     weatherServer("tab3", reactive(input$month))

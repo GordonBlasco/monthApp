@@ -1,0 +1,101 @@
+---
+title: "log_expore"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{log_expore}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, warning = FALSE, message=FALSE}
+library(tidyverse)
+library(patchwork)
+```
+
+Here we define the function that for each log pulls the needed information to calculate time on page.
+```{r}
+parse_time_on_page <- function(log_paths) {
+  dat = readRDS(log_paths)
+  in_df = map_df(dat$inputs,as_tibble)
+  out_df = map_df(dat$outputs,as_tibble)
+  session_df = as_tibble(dat$session)
+  
+  session_init_row = tibble(
+       'name' = 'homepage',
+       'timestamp' = session_df$server_connected[1],
+       'value' = 'month',
+       'type' = '',
+       'binding' = 'shiny.bootstrapTabInput')
+
+
+  session_end_row = tibble(
+       'name' = 'homepage',
+       'timestamp' = session_df$server_disconnected[1],
+       'value' = 'DISCONNECT',
+       'type' = '',
+       'binding' = 'shiny.bootstrapTabInput')
+  
+  tab_watch = in_df |> 
+    filter(binding == 'shiny.bootstrapTabInput') |>
+    bind_rows(session_init_row, session_end_row) |>
+    arrange(timestamp) |>
+    mutate(timestamp = strptime(timestamp, format= "%Y-%m-%d %H:%M:%S"), 
+           time_on_page = difftime(lead(timestamp, 1), timestamp)) |>
+    filter(value != 'DISCONNECT') |>
+    mutate(session_id = session_df$sessionid[1])
+
+  return(tab_watch)
+  
+}
+
+```
+
+
+We then map this our helper function defined above across all logs in the logs directory. This appends all logs in a dataframe format for easy plotting and exploratory work. We have the option to track users as well. 
+```{r}
+logs = list.files(path = '../logs', full.names = TRUE)
+page_times = map_df(logs, parse_time_on_page)
+```
+
+The corresponding data looks like this with time calcuated on each page per session.
+```{r}
+head(page_times)
+```
+
+
+```{r warning=FALSE, message=FALSE, fig.retina = 1, out.width='100%', dpi=300}
+p1 = ggplot(page_times, aes(value,time_on_page, session_id))+
+  geom_col(aes(fill = session_id)) +
+  labs(
+  title = "Time Spent on Page by Session",
+  x = "App Page",
+  y = "Total Time"
+  ) + theme(legend.position = 'none') + 
+  theme(plot.title = element_text(size=8)) +
+  coord_flip()
+  
+
+p2 = ggplot(page_times, aes(value,time_on_page, session_id))+
+  geom_boxplot() +
+  labs(
+  title = "Average Time Spent on Page",
+  x = "App Page",
+  y = "Total Time") + 
+  theme(plot.title = element_text(size=8)) +
+  coord_flip()
+
+p1 / p2
+```
+
+
+```{r}
+
+```
+
