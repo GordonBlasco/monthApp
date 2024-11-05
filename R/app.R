@@ -1,3 +1,9 @@
+#' Run the app
+#'
+#' @param ... passed on to \code{\link{shiny::shinyApp}}
+#'
+#' @export
+#'
 monthApp <- function(...) {
   months <- c(
     "January", "February", "March", "April", "May", "June",
