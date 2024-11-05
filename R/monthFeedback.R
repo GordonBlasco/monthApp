@@ -6,11 +6,9 @@ monthFeedbackServer <- function(id, month) {
 
   moduleServer(id, function(input, output, session) {
     output$feedback <- renderText({
-      if (month() == "October") {
-        "You picked a great month!"
-      } else {
-        "Eh, you could do better."
-      }
+      interesting_month_fact |>
+        dplyr::filter(month() == Month) |>
+        dplyr::pull(Fact)
     })
   })
 }
